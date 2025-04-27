@@ -11,14 +11,20 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
+// Metodo polifasico con 3 archivos 
+
 public class Polifasico {
-	
+	// Variables globales static
+    private static int[] a = {1, 0}; // Arreglo numero de tramos por archivo (Reales + ficticios)
+    private static int[] d = {1, 0}; // Arrgelo numero de tramos ficticios por archivo
+    // El libro pide iniciar en {1,1,...,1) pero usaremos formuals recurrentes y manejaremos el caso donde ya este ordenado
+    private static int nivel = 0; 
 	
 	// ----- Metodo determinarNumeroTramoIniciales -------- // 
 	// es mas lento que lo que propone el libro pero nos ayuda a entender como podemos recorrer el fichero y acceder a posiciones dentro de él
 	
 												// recibe ubicacion archivo y lo podemos poner a recibir int disponibles = interpreta.available();) // Lo ponemos asi por el manejo de la excepcion ya que si mandamos esto desde antes es mas facil controlarla.
-	public int determinarNumeroTramosIniciales(String ubicacionArchivo) throws FileNotFoundException, IOException { // Hay que atrapar excepciones en orden jerarquico de menor a mayor 
+	public static int determinarNumeroTramosIniciales(String ubicacionArchivo) throws FileNotFoundException, IOException { // Hay que atrapar excepciones en orden jerarquico de menor a mayor 
 		InputStream lectura = new FileInputStream(ubicacionArchivo); // Si no se encuentra el archivo FileNotFoundException se arroja 
 		// Abre el archivo en modo lectura para leer byte por byte.
 		
@@ -51,7 +57,7 @@ public class Polifasico {
 	//---------- Metodo determinarNumeroTramosInciales parecido al libro ---------- //
 	// Este metodo recorre usando un while (true) y BufferedInputStream
 	
-	public int determinarNumeroTramosInicialesLibro(String ubicacionArchivo) throws FileNotFoundException, IOException {
+	public static int determinarNumeroTramosInicialesLibro(String ubicacionArchivo) throws FileNotFoundException, IOException {
 	    DataInputStream lectura = new DataInputStream(new BufferedInputStream(new FileInputStream(ubicacionArchivo)));
 	    
 	    // En este agregamos el BufferedInputStream como en el libro porque no nos toca estar accediendo al disco duro 
@@ -84,14 +90,9 @@ public class Polifasico {
 	}
 
 	// --------- Metodo distribuirInicialmente los tramos ------- //
-	public int[] distribuirInicialmente(String origen, String f1, String f2) throws FileNotFoundException, IOException {
+	public static void distribuirInicialmente(String origen, String f1, String f2) throws FileNotFoundException, IOException {
 		
 		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(origen); 
-		int [] a = {1, 0}; // Arreglo numero de tramos por archivo (Reales + ficticios)
-		int [] d = {1, 0}; // Arrgelo numero de tramos ficticios por archivo
-		// El libro pide iniciar en {1,1,...,1) pero usaremos formuals recurrentes y manejaremos el caso donde ya este ordenado
-		
-		int nivel = 0; 
 		
 		while ((a[0] + a[1]) < numeroTramosIniciales) { //Sucesion Fibonacci en formulas recurrentes
 			a[1] = a[0]; 
@@ -107,10 +108,14 @@ public class Polifasico {
 		
 		DataOutputStream escritura1 = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f1)));
 		DataOutputStream escritura2 = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f2)));
+		
+		// Estas variables a continuacion se declaran antes del try para que en el catch (cuando se acaba el fichero de origen) podamos utilizarlas
+		boolean turnof1 = false; // Empieza en false para que el primer bloque luego de la diferencia vaya a f2. 
+
+        int anterior = lectura.readInt(); // Leemos el primer número
+		int actual; 
 		try {
-	        int anterior = lectura.readInt(); // Leemos el primer número
-	        int actual; 
-	        
+			
 	        int i = 0; 
 	        
 	     // diferencia entre a[0] y a[1] se mete en f1 para que los ficticios queden uniformemente separados
@@ -128,7 +133,7 @@ public class Polifasico {
 	            
 	            anterior = actual; // Actualizamos igual que en el otro 
 	        }
-	        boolean turnof1 = false; 
+	        
 	     // intercalamos entre f1 y f2 la escritura de los tramos ficticios restantes 
 	        while (true) { // Seguimos leyendo hasta EOF
 	            actual = lectura.readInt();
@@ -146,10 +151,8 @@ public class Polifasico {
 	            } else {
 	            	if (turnof1 == true) { 
 	                	escritura1.writeInt(anterior);
-	                	d[0]--; 
 	            	} else {
 	            		escritura2.writeInt(anterior);
-	                	d[1]--; 
 	            	}
 	            }
 	            
@@ -157,12 +160,22 @@ public class Polifasico {
 	        }
 	    } catch (EOFException e) {
 	        // Cuando termina el archivo
-	    	
+	    	if (turnof1 == true) {
+	            escritura1.writeInt(anterior);
+	            d[0]--;
+	        } else {
+	            escritura2.writeInt(anterior);
+	            d[1]--;
+	        }
 	    } finally { // Siempre hay que cerrar
 			lectura.close();
 			escritura1.close();
 			escritura2.close();
 	    }
-		return d; 
+	}
+	
+	// --------- Metodo Mezcla -------- // 
+	public void mezclarTramos(String origen, String f1, String f2, String f3) {
+		// En proceso...
 	}
 }
