@@ -55,9 +55,9 @@ public class Polifasico {
 			num1 = num2; 
 		}
 		lectura.close();
-		
-		numeroTramosIniciales++; // Siempre hay almenos 1 tramo
-		
+	
+    	numeroTramosIniciales++; // Siempre hay al menos un tramo
+   
 		return numeroTramosIniciales; 
 	}
 	
@@ -88,7 +88,7 @@ public class Polifasico {
 	        }
 	    } catch (EOFException e) {
 	        // Cuando termina el archivo
-	        numeroTramosIniciales++; // Siempre hay al menos un tramo
+	    	numeroTramosIniciales++; // Siempre hay al menos un tramo
 	    } finally { // Siempre hay que cerrar
 	        lectura.close();
 	    }
@@ -100,10 +100,12 @@ public class Polifasico {
 	public static void distribuirInicialmente() throws FileNotFoundException, IOException {
 		
 		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(); 
-		
+		int temp; 
 		while ((a[0] + a[1]) < numeroTramosIniciales) { //Sucesion Fibonacci en formulas recurrentes
+			temp = a[1]; // el orden de las formulas importa por eso meti este
 			a[1] = a[0]; 
-			a[0] = a[0] + a[1]; 
+			a[0] = a[0] + temp; 
+			
 			nivel++; 
 		}
 		
@@ -134,8 +136,7 @@ public class Polifasico {
 	                 escritura1.writeInt(anterior);
 	                 d[0]--; 
 	            } else {
-	            	escritura1.writeInt(anterior);
-	            	d[0]--; 
+	            	escritura1.writeInt(anterior); 
 	            }
 	            
 	            anterior = actual; // Actualizamos igual que en el otro 
@@ -169,10 +170,8 @@ public class Polifasico {
 	        // Cuando termina el archivo
 	    	if (turnof1 == true) {
 	            escritura1.writeInt(anterior);
-	            d[0]--;
 	        } else {
 	            escritura2.writeInt(anterior);
-	            d[1]--;
 	        }
 	    } finally { // Siempre hay que cerrar
 			lectura.close();
@@ -207,7 +206,83 @@ public class Polifasico {
 		
 	}
 	
-	public static void main (String[] args) {
+	// PORFAVOR NO BORRAR SON PARA HACER PRUEBAS CON ARREGLOS QUE PUEDA HACER A MANO TAMBIEN :)
+	
+	public static void llenarArchivoPrueba() throws FileNotFoundException, IOException {
+		DataOutputStream escritura = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(origen)));
+		int arreglo [] = {1, 3, 4, 6, 2, 5, 25, 6, 10, 15, 8, 12, 3, 7, 9, 11, 14, 15, 1, 4, 40, 7, 28, 13, 15, 15, 15, 18, 9, 12, 3, 4, 8, 6, 2, 80, 5, 19, 21, 3, 5, 1, 150, 30, 35, 38}; 
+						//   1      /    2    /     3    /   4  /          5         /    6    /   7  /        8          /   9  /   10    /11/  12  /    13    /    14  /   15  /    16     /
+		int arregloL [] = {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}; 
+		try {
+			for (int i = 0; i < arreglo.length; i++) {
+				escritura.writeInt(arreglo[i]);
+			}
+		} catch (IOException e) {
+			// Es solo un control para que sin importar si se genera excepcion o no se cierre la escritura
+		} finally {
+			escritura.close();
+		}
 		
+	}
+	
+	public static int determinarNumeroTramosLibroPrueba(String ubicacionArchivo) throws FileNotFoundException, IOException {
+	    DataInputStream lectura = new DataInputStream(new BufferedInputStream(new FileInputStream(ubicacionArchivo)));
+	    
+	    // En este agregamos el BufferedInputStream como en el libro porque no nos toca estar accediendo al disco duro 
+	    // basicamente divide el fichero de a 8 KB que son 8,192 bytes y almacena temporalmente en memoria de manera que
+	    // cada que necesita mas lee los siguientes 8kb. 
+	    
+	    int numeroTramosIniciales = 0;
+	    
+	    try {
+	        int anterior = lectura.readInt(); // Leemos el primer número
+	        int actual; 
+	        
+	        while (true) { // Seguimos leyendo hasta EOF
+	            actual = lectura.readInt();
+	            
+	            if (actual < anterior) {
+	                numeroTramosIniciales++; // Detectamos un cambio de tramo
+	            }
+	            
+	            anterior = actual; // Actualizamos igual que en el otro 
+	        }
+	    } catch (EOFException e) {
+	    	// Cuando termina el archivo
+	    	numeroTramosIniciales++; // Siempre hay al menos un tramo
+	    	} finally { // Siempre hay que cerrar
+	        lectura.close();
+	    }
+
+	    return numeroTramosIniciales;
+	}
+	// -------------------------------------------------------- Gracias 
+	public static void main (String[] args) {
+		try {
+			
+			llenarArchivoPrueba(); 
+			int numeroT = determinarNumeroTramosInicialesLibro(); 
+			
+			System.out.println("Tramos = " + numeroT);
+			distribuirInicialmente(); 
+			
+			for (int i = 0; i < 2; i++) {
+				System.out.println("d = " + d[0] + " " + d[1]);
+			}
+			for (int j = 0; j < 2; j++) {
+				System.out.println("a = " + a[0] + " " + a[1]);
+			}
+			int numeroT1 = determinarNumeroTramosLibroPrueba(f1); 
+			System.out.println("Tramos en 1: " + numeroT1);
+			int numeroT2 = determinarNumeroTramosLibroPrueba(f2); 
+			System.out.println("Tramos en 2: " + numeroT2);
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
