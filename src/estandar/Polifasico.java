@@ -96,8 +96,8 @@ public class Polifasico {
 	    return numeroTramosIniciales;
 	}
 
-	// --------- Metodo distribuirInicialmente los tramos ------- //
-	public static void distribuirInicialmente() throws FileNotFoundException, IOException {
+	// --------- Metodo distribuirInicialmente los tramos METODO MALO------- //
+	public static void MALXdistribuirInicialmenteXMAL() throws FileNotFoundException, IOException {
 		
 		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(); 
 		int temp; 
@@ -180,6 +180,81 @@ public class Polifasico {
 	    }
 	}
 	
+	// ---------------- Correccion distribuir inicialmente ------- //
+	public static void distribuirInicialmente() throws FileNotFoundException, IOException {
+		
+		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(); 
+		int temp; 
+		while ((a[0] + a[1]) < numeroTramosIniciales) { //Sucesion Fibonacci en formulas recurrentes
+			temp = a[1]; // el orden de las formulas importa por eso meti este
+			a[1] = a[0]; 
+			a[0] = a[0] + temp; 
+			
+			nivel++; 
+		}
+		
+		// Calculo de tramos ficticios
+		int totalFicticios = (a[0] + a[1]) - numeroTramosIniciales;
+		int divisionTramosFicticios = totalFicticios / 2;
+		d[0] = totalFicticios - divisionTramosFicticios;
+		d[1] = divisionTramosFicticios; 
+		
+		// Abrir los archivos
+		DataInputStream lectura = new DataInputStream(new BufferedInputStream(new FileInputStream(origen)));
+		
+		DataOutputStream escritura1 = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f1)));
+		DataOutputStream escritura2 = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f2)));
+		
+		// Estas variables a continuacion se declaran antes del try para que en el catch (cuando se acaba el fichero de origen) podamos utilizarlas
+		boolean turnof1 = false; // Empieza en false para que el primer bloque luego de la diferencia vaya a f2. 
+        
+		
+		int anterior = lectura.readInt(); // Leemos el primer número
+		int actual; 
+		
+		try {
+			
+	        // Escritura f1
+			int i = 0; 
+			
+			while (true && i < (a[0] - d[0])) { // Seguimos leyendo hasta EOF
+	            actual = lectura.readInt();
+	            
+	            if (actual < anterior) { // Detectamos un cambio de tramo
+	                 i++; 
+	                 escritura1.writeInt(anterior);
+	            } else {
+	            	escritura1.writeInt(anterior); 
+	            }
+	            
+	            anterior = actual; // Actualizamos igual que en el otro 
+	        }
+	        // Escritura f2
+			int j = 0; 
+			
+			while (true && j < (a[1] - d[1])) { // Seguimos leyendo hasta EOF
+	            actual = lectura.readInt();
+	            
+	            if (actual < anterior) { // Detectamos un cambio de tramo
+	                 j++; 
+	                 escritura2.writeInt(anterior);
+	            } else {
+	            	escritura2.writeInt(anterior); 
+	            }
+	            
+	            anterior = actual; // Actualizamos igual que en el otro 
+	        }
+	        
+	    } catch (EOFException e) {
+	        // Cuando termina el archivo
+	    	escritura2.writeInt(anterior);
+	    } finally { // Siempre hay que cerrar
+			lectura.close();
+			escritura1.close();
+			escritura2.close();
+	    }
+	}
+
 	// --------- Metodo Mezcla -------- // 
 	public void mezclarTramos() {
 		// En proceso...
@@ -261,9 +336,11 @@ public class Polifasico {
 		try {
 			
 			llenarArchivoPrueba(); 
-			int numeroT = determinarNumeroTramosInicialesLibro(); 
+			int numeroTI1 = determinarNumeroTramosInicialesLibro(); 
+			int numeroTI2 = determinarNumeroTramosLibroPrueba(origen); 
+			System.out.println("Tramos = " + numeroTI1);
+			System.out.println("Tramos = " + numeroTI2);
 			
-			System.out.println("Tramos = " + numeroT);
 			distribuirInicialmente(); 
 			
 			for (int i = 0; i < 2; i++) {
