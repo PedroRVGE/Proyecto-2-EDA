@@ -1,6 +1,7 @@
 package estandar;
 
 import java.io.InputStream;
+import java.util.Random;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -19,13 +20,19 @@ public class Polifasico {
     private static int[] d = {1, 0}; // Arrgelo numero de tramos ficticios por archivo
     // El libro pide iniciar en {1,1,...,1) pero usaremos formuals recurrentes y manejaremos el caso donde ya este ordenado
     private static int nivel = 0; 
+    
+    // Ubicacion de archivos 
+    private static String origen = "C:\\Pedro\\EIA\\Semestre3\\Estructuras de datos\\FicherosPolifasico\\Origen.bin"; 
+	private static String f1 = "C:\\Pedro\\EIA\\Semestre3\\Estructuras de datos\\FicherosPolifasico\\f1.bin";
+	private static String f2 = "C:\\Pedro\\EIA\\Semestre3\\Estructuras de datos\\FicherosPolifasico\\f2.bin";
+	private static String f3 = "C:\\Pedro\\EIA\\Semestre3\\Estructuras de datos\\FicherosPolifasico\\f3.bin"; 
 	
 	// ----- Metodo determinarNumeroTramoIniciales -------- // 
 	// es mas lento que lo que propone el libro pero nos ayuda a entender como podemos recorrer el fichero y acceder a posiciones dentro de él
 	
-												// recibe ubicacion archivo y lo podemos poner a recibir int disponibles = interpreta.available();) // Lo ponemos asi por el manejo de la excepcion ya que si mandamos esto desde antes es mas facil controlarla.
-	public static int determinarNumeroTramosIniciales(String ubicacionArchivo) throws FileNotFoundException, IOException { // Hay que atrapar excepciones en orden jerarquico de menor a mayor 
-		InputStream lectura = new FileInputStream(ubicacionArchivo); // Si no se encuentra el archivo FileNotFoundException se arroja 
+												//lo podemos poner a recibir int disponibles = interpreta.available();) // Lo ponemos asi por el manejo de la excepcion ya que si mandamos esto desde antes es mas facil controlarla.
+	public static int determinarNumeroTramosIniciales() throws FileNotFoundException, IOException { // Hay que atrapar excepciones en orden jerarquico de menor a mayor 
+		InputStream lectura = new FileInputStream(origen); // Si no se encuentra el archivo FileNotFoundException se arroja 
 		// Abre el archivo en modo lectura para leer byte por byte.
 		
 		DataInputStream interpreta = new DataInputStream(lectura);
@@ -57,8 +64,8 @@ public class Polifasico {
 	//---------- Metodo determinarNumeroTramosInciales parecido al libro ---------- //
 	// Este metodo recorre usando un while (true) y BufferedInputStream
 	
-	public static int determinarNumeroTramosInicialesLibro(String ubicacionArchivo) throws FileNotFoundException, IOException {
-	    DataInputStream lectura = new DataInputStream(new BufferedInputStream(new FileInputStream(ubicacionArchivo)));
+	public static int determinarNumeroTramosInicialesLibro() throws FileNotFoundException, IOException {
+	    DataInputStream lectura = new DataInputStream(new BufferedInputStream(new FileInputStream(origen)));
 	    
 	    // En este agregamos el BufferedInputStream como en el libro porque no nos toca estar accediendo al disco duro 
 	    // basicamente divide el fichero de a 8 KB que son 8,192 bytes y almacena temporalmente en memoria de manera que
@@ -90,9 +97,9 @@ public class Polifasico {
 	}
 
 	// --------- Metodo distribuirInicialmente los tramos ------- //
-	public static void distribuirInicialmente(String origen, String f1, String f2) throws FileNotFoundException, IOException {
+	public static void distribuirInicialmente() throws FileNotFoundException, IOException {
 		
-		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(origen); 
+		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(); 
 		
 		while ((a[0] + a[1]) < numeroTramosIniciales) { //Sucesion Fibonacci en formulas recurrentes
 			a[1] = a[0]; 
@@ -175,7 +182,32 @@ public class Polifasico {
 	}
 	
 	// --------- Metodo Mezcla -------- // 
-	public void mezclarTramos(String origen, String f1, String f2, String f3) {
+	public void mezclarTramos() {
 		// En proceso...
+		/* Si usas new FileOutputStream("archivo.bin"), el archivo se sobrescribe. Si el archivo ya existe, su contenido anterior será eliminado y reemplazado por los nuevos datos.
+		 * Si usas new FileOutputStream("archivo.bin", true), los datos existentes no se borrarán y se agregarán los nuevos datos al final del archivo.*/ 
+	}
+	
+	public static void llenarArchivoAleatoriamente() throws FileNotFoundException, IOException {
+		DataOutputStream escritura = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(origen)));
+		
+		Random random = new Random(); 
+		int numeroAleatorio; 
+		
+		try {
+			for (int i = 0; i < 1000; i++) {
+				numeroAleatorio = random.nextInt(); //Numeros de 2^(32) se pueden generar
+				escritura.writeInt(numeroAleatorio);
+			}
+		} catch (IOException e) {
+			// Es solo un control para que sin importar si se genera excepcion o no se cierre la escritura
+		} finally {
+			escritura.close();
+		}
+		
+	}
+	
+	public static void main (String[] args) {
+		
 	}
 }
