@@ -255,7 +255,7 @@ public class Polifasico {
 	}
 
 	// --------- Metodo Mezcla -------- // 
-	public void mezclarTramos() throws IOException {
+	public static void mezclarTramos() throws IOException {
 		// En proceso...
 		/* Si usas new FileOutputStream("archivo.bin"), el archivo se sobrescribe. Si el archivo ya existe, su contenido anterior será eliminado y reemplazado por los nuevos datos.
 		 * Si usas new FileOutputStream("archivo.bin", true), los datos existentes no se borrarán y se agregarán los nuevos datos al final del archivo.*/ 
@@ -271,7 +271,7 @@ public class Polifasico {
 		
 		int [] indiceArchivoRol = {1, 2, 3};
 		
-		while (nivel > 0) {
+		while (nivel >= 0) {
 			
 			// Abrimos los archivos
 			DataInputStream lectura1 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura1)));
@@ -282,13 +282,13 @@ public class Polifasico {
 			int i = 0; // Contador Tramos Lectura1
 			int j = 0; // Contador Tramos Lectura2
 			
-			// Agregue esto para saber hasta donde va el while de mezcla de tramos
+			// Agregue esto para saber hasta donde va el while de mezcla de tramos reales con reales. 
 			int[] tramosReales = new int[3]; 
 			tramosReales[0] = a[0] - d[0]; 
 			tramosReales[1] = a[1] - d[1];
 			tramosReales[2] = a[2] - d[2]; 
 			
-			int numeroMinimoTramos = a[0] + a[1] + a[2]; 
+			int numeroMinimoTramos = a[0] + a[1] + a[2]; // Este es el numero de tramos reales con reales que se mezcla
 			
 			for (int n = 0; n < 2; n++) {
 				if (tramosReales[n] != 0) {
@@ -323,6 +323,10 @@ public class Polifasico {
 				// Significa que no hay mas elementos despues
 			} 
 			
+			// Primera parte de la mezcla es tramos reales con tramos reales. 
+			// Logica, se compara uno a uno los elementos de cada archivo y se lleva un contador de tramos de manera que, 
+			// cuando el archivo mas pequeño se acaba el archivo mas grande uso exactamente la misma cantidad de tramos. 
+			// cuando se acaba un tramo en un archivo termina de copiar el resto del tramo del otro archivo en el de escritura. 
 			
 			while (condicionMezcla == true) { // Cuando alguno quede vacio ya se trabaja con el arreglo D (tramos ficticios por archivo). 
 				
@@ -382,9 +386,9 @@ public class Polifasico {
 				}
 			}
 		// Tramos ficticios 
+			int k = 0; 
 			if (archivoConElementosf1 == false) { // Significa que el otro probablemebte tenga archivos reales 
-				int tramosCopiados = d[indiceArchivoRol[0]];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
-				int k = 0; 
+				int tramosCopiados = d[indiceArchivoRol[0] - 1];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
 				anteriorDe2 = lectura2.readInt();
 				
 				while (archivoConElementosf2 == true && k < tramosCopiados) { // 2 opciones: llenamos con los tramos reales que hay que hacer o fin del archivo
@@ -393,7 +397,7 @@ public class Polifasico {
            			 actualDe2 = lectura2.readInt(); 
            			 if (actualDe2 < anteriorDe2) { // detectamos cambio de tramo
            				 k++; // COntador de cuantos tramos reales se copian (se mezclan con ficticios)
-           				d[indiceArchivoRol[0]]--; // Reducimos los ficticios en ese archivo
+           				d[indiceArchivoRol[0] - 1]--; // Reducimos los ficticios en ese archivo
            				 escritura.writeInt(anteriorDe2);
            			 } else 
            				 escritura.writeInt(anteriorDe2); 
@@ -407,15 +411,14 @@ public class Polifasico {
 				
 				if (archivoConElementosf2 == false && k < tramosCopiados) { // Significa que se acabaron los tramos reales hay que ver si quedan ficticios por mezclar
 					while (k < tramosCopiados) {
-						d[indiceArchivoRol[0]]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[1]]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[2]]++; //Esto es como mezclar ficticio con ficticio
+						d[indiceArchivoRol[0] - 1]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[1] - 1]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[2] - 1]++; //Esto es como mezclar ficticio con ficticio
 						k++; 
 					}
 				}
 			} else {
-				int tramosCopiados = d[indiceArchivoRol[1]];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
-				int k = 0; 
+				int tramosCopiados = d[indiceArchivoRol[1] - 1];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
 				anteriorDe1 = lectura1.readInt();
 				
 				while (archivoConElementosf2 == true && k < tramosCopiados) { // 2 opciones: llenamos con los tramos reales que hay que hacer o fin del archivo
@@ -424,7 +427,7 @@ public class Polifasico {
            			 actualDe1 = lectura1.readInt(); 
            			 if (actualDe1 < anteriorDe1) { // detectamos cambio de tramo
            				 k++; // Contador de cuantos tramos reales se copian (se mezclan con ficticios)
-           				 d[indiceArchivoRol[1]]--; // Reducimos los ficticios en ese archivo
+           				 d[indiceArchivoRol[1] - 1]--; // Reducimos los ficticios en ese archivo
            				 escritura.writeInt(anteriorDe1);
            			 } else 
            				 escritura.writeInt(anteriorDe1); 
@@ -438,25 +441,24 @@ public class Polifasico {
 				
 				if (archivoConElementosf1 == false && k < tramosCopiados) { // Significa que se acabaron los tramos reales hay que ver si quedan ficticios por mezclar
 					while (k < tramosCopiados) {
-						d[indiceArchivoRol[0]]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[1]]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[2]]++; //Esto es como mezclar ficticio con ficticio
+						d[indiceArchivoRol[0] - 1]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[1] - 1]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[2] - 1]++; //Esto es como mezclar ficticio con ficticio
 						k++; 
 					}
 				}
 			}
 		// Logica calculo a del siguiente nivel:
 			// basicamente cogemos los numeros que estaban antes y restamos los tramos mezclados en los de lectura
-			a[indiceArchivoRol[0]] = a[indiceArchivoRol[0]] - numeroMinimoTramos; 
-			a[indiceArchivoRol[1]] = a[indiceArchivoRol[1]] - numeroMinimoTramos; 
+			a[indiceArchivoRol[0] - 1] = a[indiceArchivoRol[0] - 1] - numeroMinimoTramos - k; 
+			a[indiceArchivoRol[1] - 1] = a[indiceArchivoRol[1] - 1] - numeroMinimoTramos - k; 
 			// Sumamos en el de escritura
-			a[indiceArchivoRol[2]] = numeroMinimoTramos; 
+			a[indiceArchivoRol[2] - 1] = numeroMinimoTramos + k; 
 		// Nivel --; 
-			nivel--; 
 			
-		// Movemos dinamicamente los roles de los archivos
+		// Movemos dinamicamente los roles de los archivos ME FALTA CAMBIAR EL ARREGLO DE INDICE ARCHIVO ROL
 			String tempCambioString; 
-			if (archivoConElementosf1 == false && a[indiceArchivoRol[0]] <= 0) { // Si el archivo esta vacio Y no tiene tramos entonces ese pasa a ser de escritura
+			if (archivoConElementosf1 == false && a[indiceArchivoRol[0] - 1] <= 0) { // Si el archivo esta vacio Y no tiene tramos entonces ese pasa a ser de escritura
 				tempCambioString = archivoEscritura; 
 				archivoEscritura = archivoLectura1; 
 				archivoLectura1 = tempCambioString; 
@@ -465,6 +467,8 @@ public class Polifasico {
 				archivoEscritura = archivoLectura2; 
 				archivoLectura2 = tempCambioString;
 			}
+			
+			
 			} catch (IOException e) {
 				
 			} finally {
@@ -473,8 +477,9 @@ public class Polifasico {
 				lectura2.close();
 				escritura.close();
 			}
-			
+			nivel--; 
 		}
+		System.out.println("Archivo final: " + archivoEscritura);
 }
 
 	
@@ -580,6 +585,12 @@ public class Polifasico {
 			System.out.println("Tramos en 1: " + numeroT1);
 			int numeroT2 = determinarNumeroTramosLibroPrueba(f2); 
 			System.out.println("Tramos en 2: " + numeroT2);
+			
+			mezclarTramos(); 
+			
+			int numeroTF = determinarNumeroTramosLibroPrueba(f3); 
+			System.out.println("Al final quedan " + numeroTF);
+			leerArchivoDeEntrada(f3); 
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
