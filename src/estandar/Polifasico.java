@@ -462,10 +462,18 @@ public class Polifasico {
 				tempCambioString = archivoEscritura; 
 				archivoEscritura = archivoLectura1; 
 				archivoLectura1 = tempCambioString; 
+				
+				int tempRol = indiceArchivoRol[2];
+			    indiceArchivoRol[2] = indiceArchivoRol[0];
+			    indiceArchivoRol[0] = tempRol;
 			} else {
 				tempCambioString = archivoEscritura; 
 				archivoEscritura = archivoLectura2; 
 				archivoLectura2 = tempCambioString;
+				
+				int tempRol = indiceArchivoRol[2];
+			    indiceArchivoRol[2] = indiceArchivoRol[1];
+			    indiceArchivoRol[1] = tempRol;
 			}
 			
 			
