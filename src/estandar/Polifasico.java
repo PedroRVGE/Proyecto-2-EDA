@@ -97,6 +97,7 @@ public class Polifasico {
 	}
 
 	// --------- Metodo distribuirInicialmente los tramos METODO MALO------- //
+	// Este metodo falla porque hacer una distribucion alternante puede hacer que los tramos se mezclen sin querer. 
 	public static void MALXdistribuirInicialmenteXMAL() throws FileNotFoundException, IOException {
 		
 		int numeroTramosIniciales = determinarNumeroTramosInicialesLibro(); 
@@ -256,11 +257,93 @@ public class Polifasico {
 	}
 
 	// --------- Metodo Mezcla -------- // 
-	public void mezclarTramos() {
+	public void mezclarTramos() throws IOException {
 		// En proceso...
 		/* Si usas new FileOutputStream("archivo.bin"), el archivo se sobrescribe. Si el archivo ya existe, su contenido anterior será eliminado y reemplazado por los nuevos datos.
 		 * Si usas new FileOutputStream("archivo.bin", true), los datos existentes no se borrarán y se agregarán los nuevos datos al final del archivo.*/ 
-	}
+		String archivoLectura1 = f1; 
+		String archivoLectura2 = f2; 
+		String archivoEscritura = f3; 
+		
+		int anteriorDe1 = 1; 
+		int actualDe1;
+		int anteriorDe2 = 1; 
+		int actualDe2; 
+		
+		while (nivel > 0) {
+			// Abrimos los archivos
+			DataInputStream lectura1 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura1)));
+			DataInputStream lectura2 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura2)));
+			DataOutputStream escritura = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(archivoEscritura)));
+			
+			// Empieza la mezcla //
+			int i = 0; // Contador Tramos Lectura1
+			int j = 0; // Contador Tramos Lectura2
+			boolean condicionMezcla = true; 
+			
+			try {
+				anteriorDe1 = lectura1.readInt(); 
+			} catch (EOFException e) {
+				condicionMezcla = false; 
+			} 
+			try {
+				anteriorDe2 = lectura2.readInt();
+			} catch (EOFException e) {
+				condicionMezcla = false; 
+			} 
+			try {
+				actualDe1 = lectura1.readInt();
+			} catch (EOFException e) {
+				// Significa que no hay mas elementos depsues 
+			} 
+			try {
+				actualDe2 = lectura2.readInt();
+			} catch (EOFException e) {
+				// Significa que no hay mas elementos despues
+			} 
+			
+			
+			while (condicionMezcla == true) { // Cuando alguno quede vacio ya se trabaja con el arreglo D (tramos ficticios por archivo). 
+				
+				if (anteriorDe1 <= anteriorDe2) { // Comparador que organiza
+					
+					escritura.writeInt(anteriorDe1);
+					anteriorDe1 = actualDe1; // Corregir orden creo 
+					actualDe1 = lectura1.readInt();
+					
+					if (actualDe1 < anteriorDe1) { // Detectamos un cambio de tramo
+		                 i++; // hay cambio de tramo en el archivo de lectura 1
+		                 if (i > j) { // Significa que hay que terminar de escribir el tramo del otro archivo
+		                	 boolean archivoConElementos = true; 
+		                	 
+		                	 while (archivoConElementos == true && anteriorDe2 <= actualDe2) { // 2 opciones: cambio de tramo o fin del archivo
+		                		 escritura.writeInt(anteriorDe2); 
+		                		 anteriorDe2 = actualDe2; 
+		                		 try {
+		                			 actualDe2 = lectura2.readInt(); 
+		                		 } catch (EOFException e) {
+		                			 archivoConElementos = false; 
+		                			 escritura.writeInt(anteriorDe2); // Escribimos el ultimo elemento de archivo de lectura 2. 
+		                		 }
+		                	 }
+		                	 j++; // terminamos de escribir el tramo del archivo de lectura 2 o el archivo en si
+		                 }
+		            } else {
+		            	// No hay cambio de tramo sigue la comparacion normal
+		            }
+				} else { // anteriorDe2 es mayor entonces se hace algo parecido a lo que se hace arriba
+					escritura.write(anteriorDe2);
+					
+					actualDe2 = lectura2.readInt(); 
+					
+					anteriorDe2 = actualDe2; // Corregir orden 
+				}
+			}
+			// Me falta saber cuando termina el while (CondicionDeMezcla) osea donde lo cambiamos 
+			
+		}
+}
+
 	
 	public static void llenarArchivoAleatoriamente() throws FileNotFoundException, IOException {
 		DataOutputStream escritura = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(origen)));
@@ -281,6 +364,16 @@ public class Polifasico {
 		
 	}
 	
+	// Leer y mostrar un archivo
+    public static void leerArchivoDeEntrada(String f) throws IOException {
+        try (DataInputStream reader = new DataInputStream(new BufferedInputStream(new FileInputStream(f)))) {
+            while (reader.available() > 0) {
+                System.out.print(reader.readInt() + " ");
+            }
+            System.out.println();
+        }
+    }
+	
 	// PORFAVOR NO BORRAR SON PARA HACER PRUEBAS CON ARREGLOS QUE PUEDA HACER A MANO TAMBIEN :)
 	
 	public static void llenarArchivoPrueba() throws FileNotFoundException, IOException {
@@ -297,6 +390,7 @@ public class Polifasico {
 		} finally {
 			escritura.close();
 		}
+		// Metodo  MALXdistribuirInicialmenteXMAL() falla porque cuando se hace alternante algo como los tramos 1 y 3 del arreglo quedan ordenados sin querer. 
 		
 	}
 	
@@ -338,11 +432,11 @@ public class Polifasico {
 			llenarArchivoPrueba(); 
 			int numeroTI1 = determinarNumeroTramosInicialesLibro(); 
 			int numeroTI2 = determinarNumeroTramosLibroPrueba(origen); 
-			System.out.println("Tramos = " + numeroTI1);
-			System.out.println("Tramos = " + numeroTI2);
+			System.out.println("Tramos Iniciales= " + numeroTI1);
+			System.out.println("Tramos Iniciales= " + numeroTI2);
 			
 			distribuirInicialmente(); 
-			
+			System.out.println("Nivel Inicial: " + nivel);
 			for (int i = 0; i < 2; i++) {
 				System.out.println("d = " + d[0] + " " + d[1]);
 			}
@@ -362,4 +456,5 @@ public class Polifasico {
 			e.printStackTrace();
 		}
 	}
+
 }
