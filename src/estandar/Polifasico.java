@@ -16,8 +16,8 @@ import java.io.IOException;
 
 public class Polifasico {
 	// Variables globales static
-    private static int[] a = {1, 0}; // Arreglo numero de tramos por archivo (Reales + ficticios)
-    private static int[] d = {1, 0}; // Arrgelo numero de tramos ficticios por archivo
+    private static int[] a = {1, 0, 0}; // Arreglo numero de tramos por archivo (Reales + ficticios)
+    private static int[] d = {1, 0, 0}; // Arrgelo numero de tramos ficticios por archivo
     // El libro pide iniciar en {1,1,...,1) pero usaremos formuals recurrentes y manejaremos el caso donde ya este ordenado
     private static int nivel = 0; 
     
@@ -206,9 +206,7 @@ public class Polifasico {
 		DataOutputStream escritura1 = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f1)));
 		DataOutputStream escritura2 = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f2)));
 		
-		// Estas variables a continuacion se declaran antes del try para que en el catch (cuando se acaba el fichero de origen) podamos utilizarlas
-		boolean turnof1 = false; // Empieza en false para que el primer bloque luego de la diferencia vaya a f2. 
-        
+		// Estas variables a continuacion se declaran antes del try para que en el catch (cuando se acaba el fichero de origen) podamos utilizarlas 
 		
 		int anterior = lectura.readInt(); // Leemos el primer número
 		int actual; 
@@ -264,22 +262,45 @@ public class Polifasico {
 		String archivoLectura1 = f1; 
 		String archivoLectura2 = f2; 
 		String archivoEscritura = f3; 
+		// idea aparte String [] arregloString = {f1, f2, f3}; 
+		// Inicializamos pero en realidad estos valores deben cambiar, si al final hay -1 hay un error.
+		int anteriorDe1 = -1; 
+		int actualDe1 = -1;
+		int anteriorDe2 = -1; 
+		int actualDe2 = -1; 
 		
-		int anteriorDe1 = 1; 
-		int actualDe1;
-		int anteriorDe2 = 1; 
-		int actualDe2; 
+		int [] indiceArchivoRol = {1, 2, 3};
 		
 		while (nivel > 0) {
+			
 			// Abrimos los archivos
 			DataInputStream lectura1 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura1)));
 			DataInputStream lectura2 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura2)));
 			DataOutputStream escritura = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(archivoEscritura)));
-			
+			try { // Estre try and catch para que sin importar la excepcion que se arroje siempre cerremos los archivos
 			// Empieza la mezcla //
 			int i = 0; // Contador Tramos Lectura1
 			int j = 0; // Contador Tramos Lectura2
+			
+			// Agregue esto para saber hasta donde va el while de mezcla de tramos
+			int[] tramosReales = new int[3]; 
+			tramosReales[0] = a[0] - d[0]; 
+			tramosReales[1] = a[1] - d[1];
+			tramosReales[2] = a[2] - d[2]; 
+			
+			int numeroMinimoTramos = a[0] + a[1] + a[2]; 
+			
+			for (int n = 0; n < 2; n++) {
+				if (tramosReales[n] != 0) {
+					if (tramosReales[n] < numeroMinimoTramos) {
+						numeroMinimoTramos = tramosReales[n];
+					}
+				}
+			}
+			
 			boolean condicionMezcla = true; 
+			boolean archivoConElementosf1 = true;
+			boolean archivoConElementosf2 = true;
 			
 			try {
 				anteriorDe1 = lectura1.readInt(); 
@@ -308,38 +329,150 @@ public class Polifasico {
 				if (anteriorDe1 <= anteriorDe2) { // Comparador que organiza
 					
 					escritura.writeInt(anteriorDe1);
-					anteriorDe1 = actualDe1; // Corregir orden creo 
+					anteriorDe1 = actualDe1; // Orden Corregido " " 
 					actualDe1 = lectura1.readInt();
 					
 					if (actualDe1 < anteriorDe1) { // Detectamos un cambio de tramo
 		                 i++; // hay cambio de tramo en el archivo de lectura 1
-		                 if (i > j) { // Significa que hay que terminar de escribir el tramo del otro archivo
-		                	 boolean archivoConElementos = true; 
+		                 if (i > j) { // Significa que hay que terminar de escribir el tramo del otro archivo REVISAR NECESIDAD
+		                	 archivoConElementosf2 = true; // Comprobacion si se acabo el archivo
 		                	 
-		                	 while (archivoConElementos == true && anteriorDe2 <= actualDe2) { // 2 opciones: cambio de tramo o fin del archivo
+		                	 while (archivoConElementosf2 == true && anteriorDe2 <= actualDe2) { // 2 opciones: cambio de tramo o fin del archivo
 		                		 escritura.writeInt(anteriorDe2); 
 		                		 anteriorDe2 = actualDe2; 
 		                		 try {
 		                			 actualDe2 = lectura2.readInt(); 
 		                		 } catch (EOFException e) {
-		                			 archivoConElementos = false; 
+		                			 archivoConElementosf2 = false; 
 		                			 escritura.writeInt(anteriorDe2); // Escribimos el ultimo elemento de archivo de lectura 2. 
 		                		 }
 		                	 }
 		                	 j++; // terminamos de escribir el tramo del archivo de lectura 2 o el archivo en si
 		                 }
-		            } else {
-		            	// No hay cambio de tramo sigue la comparacion normal
+		            } else { // No hay cambio de tramo sigue la comparacion normal
+		            	// Creo que va vacio por ahora en STANDBY. 
 		            }
 				} else { // anteriorDe2 es mayor entonces se hace algo parecido a lo que se hace arriba
-					escritura.write(anteriorDe2);
-					
+					escritura.writeInt(anteriorDe2);
+					anteriorDe2 = actualDe2; // Orden corregido " "
 					actualDe2 = lectura2.readInt(); 
 					
-					anteriorDe2 = actualDe2; // Corregir orden 
+					if (actualDe2 < anteriorDe2) { // Detectamos un cambio de tramo
+		                 j++; // hay cambio de tramo en el archivo de lectura 1
+		                 if (j > i) { // Significa que hay que terminar de escribir el tramo del otro archivo REVISAR NECESIDAD
+		                	 archivoConElementosf1 = true; // Comprobacion si se acabo el archivo
+		                	 
+		                	 while (archivoConElementosf1 == true && anteriorDe1 <= actualDe1) { // 2 opciones: cambio de tramo o fin del archivo
+		                		 escritura.writeInt(anteriorDe1); 
+		                		 anteriorDe1 = actualDe1; 
+		                		 try {
+		                			 actualDe1 = lectura1.readInt(); 
+		                		 } catch (EOFException e) {
+		                			 archivoConElementosf1 = false; 
+		                			 escritura.writeInt(anteriorDe1); // Escribimos el ultimo elemento de archivo de lectura 2. 
+		                			 }
+		                		 }
+		                	 i++; // terminamos de escribir el tramo del archivo de lectura 2 o el archivo en si
+		                	 }
+		                 }
+					}
+				// Aca validamos si ya se acabo algun archivo de lectura para salir de la mezcla de reales con reales
+				if (i == numeroMinimoTramos || j == numeroMinimoTramos) {
+				    condicionMezcla = false;
 				}
 			}
-			// Me falta saber cuando termina el while (CondicionDeMezcla) osea donde lo cambiamos 
+		// Tramos ficticios 
+			if (archivoConElementosf1 == false) { // Significa que el otro probablemebte tenga archivos reales 
+				int tramosCopiados = d[indiceArchivoRol[0]];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
+				int k = 0; 
+				anteriorDe2 = lectura2.readInt();
+				
+				while (archivoConElementosf2 == true && k < tramosCopiados) { // 2 opciones: llenamos con los tramos reales que hay que hacer o fin del archivo
+					
+           		 try {
+           			 actualDe2 = lectura2.readInt(); 
+           			 if (actualDe2 < anteriorDe2) { // detectamos cambio de tramo
+           				 k++; // COntador de cuantos tramos reales se copian (se mezclan con ficticios)
+           				d[indiceArchivoRol[0]]--; // Reducimos los ficticios en ese archivo
+           				 escritura.writeInt(anteriorDe2);
+           			 } else 
+           				 escritura.writeInt(anteriorDe2); 
+           		 } catch (EOFException e) {
+           			 archivoConElementosf2 = false; 
+           			 escritura.writeInt(anteriorDe2); // Escribimos el ultimo elemento de archivo de lectura 2. 
+           			 }
+           		 
+           		 anteriorDe2 = actualDe2; 
+				}
+				
+				if (archivoConElementosf2 == false && k < tramosCopiados) { // Significa que se acabaron los tramos reales hay que ver si quedan ficticios por mezclar
+					while (k < tramosCopiados) {
+						d[indiceArchivoRol[0]]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[1]]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[2]]++; //Esto es como mezclar ficticio con ficticio
+						k++; 
+					}
+				}
+			} else {
+				int tramosCopiados = d[indiceArchivoRol[1]];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
+				int k = 0; 
+				anteriorDe1 = lectura1.readInt();
+				
+				while (archivoConElementosf2 == true && k < tramosCopiados) { // 2 opciones: llenamos con los tramos reales que hay que hacer o fin del archivo
+					
+           		 try {
+           			 actualDe1 = lectura1.readInt(); 
+           			 if (actualDe1 < anteriorDe1) { // detectamos cambio de tramo
+           				 k++; // Contador de cuantos tramos reales se copian (se mezclan con ficticios)
+           				 d[indiceArchivoRol[1]]--; // Reducimos los ficticios en ese archivo
+           				 escritura.writeInt(anteriorDe1);
+           			 } else 
+           				 escritura.writeInt(anteriorDe1); 
+           		 } catch (EOFException e) {
+           			 archivoConElementosf1 = false; 
+           			 escritura.writeInt(anteriorDe1); // Escribimos el ultimo elemento de archivo de lectura 2. 
+           			 }
+           		 
+           		 anteriorDe1 = actualDe1; 
+				}
+				
+				if (archivoConElementosf1 == false && k < tramosCopiados) { // Significa que se acabaron los tramos reales hay que ver si quedan ficticios por mezclar
+					while (k < tramosCopiados) {
+						d[indiceArchivoRol[0]]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[1]]--; // Reducimos los ficticios en ese archivo
+						d[indiceArchivoRol[2]]++; //Esto es como mezclar ficticio con ficticio
+						k++; 
+					}
+				}
+			}
+		// Logica calculo a del siguiente nivel:
+			// basicamente cogemos los numeros que estaban antes y restamos los tramos mezclados en los de lectura
+			a[indiceArchivoRol[0]] = a[indiceArchivoRol[0]] - numeroMinimoTramos; 
+			a[indiceArchivoRol[1]] = a[indiceArchivoRol[1]] - numeroMinimoTramos; 
+			// Sumamos en el de escritura
+			a[indiceArchivoRol[2]] = numeroMinimoTramos; 
+		// Nivel --; 
+			nivel--; 
+			
+		// Movemos dinamicamente los roles de los archivos
+			String tempCambioString; 
+			if (archivoConElementosf1 == false && a[indiceArchivoRol[0]] <= 0) { // Si el archivo esta vacio Y no tiene tramos entonces ese pasa a ser de escritura
+				tempCambioString = archivoEscritura; 
+				archivoEscritura = archivoLectura1; 
+				archivoLectura1 = tempCambioString; 
+			} else {
+				tempCambioString = archivoEscritura; 
+				archivoEscritura = archivoLectura2; 
+				archivoLectura2 = tempCambioString;
+			}
+			} catch (IOException e) {
+				
+			} finally {
+				// Cerramos archivos siempre 
+				lectura1.close();
+				lectura2.close();
+				escritura.close();
+			}
 			
 		}
 }
