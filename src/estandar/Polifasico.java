@@ -246,7 +246,7 @@ public class Polifasico {
 	        
 	    } catch (EOFException e) {
 	        // Cuando termina el archivo
-	    	escritura2.writeInt(anterior);
+	    	escritura2.writeInt(anterior);	
 	    } finally { // Siempre hay que cerrar
 			lectura.close();
 			escritura1.close();
@@ -256,239 +256,142 @@ public class Polifasico {
 
 	// --------- Metodo Mezcla -------- // 
 	public static void mezclarTramos() throws IOException {
-		// En proceso...
-		/* Si usas new FileOutputStream("archivo.bin"), el archivo se sobrescribe. Si el archivo ya existe, su contenido anterior será eliminado y reemplazado por los nuevos datos.
-		 * Si usas new FileOutputStream("archivo.bin", true), los datos existentes no se borrarán y se agregarán los nuevos datos al final del archivo.*/ 
-		String archivoLectura1 = f1; 
-		String archivoLectura2 = f2; 
-		String archivoEscritura = f3; 
-		// idea aparte String [] arregloString = {f1, f2, f3}; 
-		// Inicializamos pero en realidad estos valores deben cambiar, si al final hay -1 hay un error.
-		int anteriorDe1 = -1; 
-		int actualDe1 = -1;
-		int anteriorDe2 = -1; 
-		int actualDe2 = -1; 
-		
-		int [] indiceArchivoRol = {1, 2, 3};
-		
-		while (nivel >= 0) {
-			
-			// Abrimos los archivos
-			DataInputStream lectura1 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura1)));
-			DataInputStream lectura2 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura2)));
-			DataOutputStream escritura = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(archivoEscritura)));
-			try { // Estre try and catch para que sin importar la excepcion que se arroje siempre cerremos los archivos
-			// Empieza la mezcla //
-			int i = 0; // Contador Tramos Lectura1
-			int j = 0; // Contador Tramos Lectura2
-			
-			// Agregue esto para saber hasta donde va el while de mezcla de tramos reales con reales. 
-			int[] tramosReales = new int[3]; 
-			tramosReales[0] = a[0] - d[0]; 
-			tramosReales[1] = a[1] - d[1];
-			tramosReales[2] = a[2] - d[2]; 
-			
-			int numeroMinimoTramos = a[0] + a[1] + a[2]; // Este es el numero de tramos reales con reales que se mezcla
-			
-			for (int n = 0; n < 2; n++) {
-				if (tramosReales[n] != 0) {
-					if (tramosReales[n] < numeroMinimoTramos) {
-						numeroMinimoTramos = tramosReales[n];
-					}
-				}
-			}
-			
-			boolean condicionMezcla = true; 
-			boolean archivoConElementosf1 = true;
-			boolean archivoConElementosf2 = true;
-			
-			try {
-				anteriorDe1 = lectura1.readInt(); 
-			} catch (EOFException e) {
-				condicionMezcla = false; 
-			} 
-			try {
-				anteriorDe2 = lectura2.readInt();
-			} catch (EOFException e) {
-				condicionMezcla = false; 
-			} 
-			try {
-				actualDe1 = lectura1.readInt();
-			} catch (EOFException e) {
-				// Significa que no hay mas elementos depsues 
-			} 
-			try {
-				actualDe2 = lectura2.readInt();
-			} catch (EOFException e) {
-				// Significa que no hay mas elementos despues
-			} 
-			
-			// Primera parte de la mezcla es tramos reales con tramos reales. 
-			// Logica, se compara uno a uno los elementos de cada archivo y se lleva un contador de tramos de manera que, 
-			// cuando el archivo mas pequeño se acaba el archivo mas grande uso exactamente la misma cantidad de tramos. 
-			// cuando se acaba un tramo en un archivo termina de copiar el resto del tramo del otro archivo en el de escritura. 
-			
-			while (condicionMezcla == true) { // Cuando alguno quede vacio ya se trabaja con el arreglo D (tramos ficticios por archivo). 
-				
-				if (anteriorDe1 <= anteriorDe2) { // Comparador que organiza
-					
-					escritura.writeInt(anteriorDe1);
-					anteriorDe1 = actualDe1; // Orden Corregido " " 
-					actualDe1 = lectura1.readInt();
-					
-					if (actualDe1 < anteriorDe1) { // Detectamos un cambio de tramo
-		                 i++; // hay cambio de tramo en el archivo de lectura 1
-		                 if (i > j) { // Significa que hay que terminar de escribir el tramo del otro archivo REVISAR NECESIDAD
-		                	 archivoConElementosf2 = true; // Comprobacion si se acabo el archivo
-		                	 
-		                	 while (archivoConElementosf2 == true && anteriorDe2 <= actualDe2) { // 2 opciones: cambio de tramo o fin del archivo
-		                		 escritura.writeInt(anteriorDe2); 
-		                		 anteriorDe2 = actualDe2; 
-		                		 try {
-		                			 actualDe2 = lectura2.readInt(); 
-		                		 } catch (EOFException e) {
-		                			 archivoConElementosf2 = false; 
-		                			 escritura.writeInt(anteriorDe2); // Escribimos el ultimo elemento de archivo de lectura 2. 
-		                		 }
-		                	 }
-		                	 j++; // terminamos de escribir el tramo del archivo de lectura 2 o el archivo en si
-		                 }
-		            } else { // No hay cambio de tramo sigue la comparacion normal
-		            	// Creo que va vacio por ahora en STANDBY. 
-		            }
-				} else { // anteriorDe2 es mayor entonces se hace algo parecido a lo que se hace arriba
-					escritura.writeInt(anteriorDe2);
-					anteriorDe2 = actualDe2; // Orden corregido " "
-					actualDe2 = lectura2.readInt(); 
-					
-					if (actualDe2 < anteriorDe2) { // Detectamos un cambio de tramo
-		                 j++; // hay cambio de tramo en el archivo de lectura 1
-		                 if (j > i) { // Significa que hay que terminar de escribir el tramo del otro archivo REVISAR NECESIDAD
-		                	 archivoConElementosf1 = true; // Comprobacion si se acabo el archivo
-		                	 
-		                	 while (archivoConElementosf1 == true && anteriorDe1 <= actualDe1) { // 2 opciones: cambio de tramo o fin del archivo
-		                		 escritura.writeInt(anteriorDe1); 
-		                		 anteriorDe1 = actualDe1; 
-		                		 try {
-		                			 actualDe1 = lectura1.readInt(); 
-		                		 } catch (EOFException e) {
-		                			 archivoConElementosf1 = false; 
-		                			 escritura.writeInt(anteriorDe1); // Escribimos el ultimo elemento de archivo de lectura 2. 
-		                			 }
-		                		 }
-		                	 i++; // terminamos de escribir el tramo del archivo de lectura 2 o el archivo en si
-		                	 }
-		                 }
-					}
-				// Aca validamos si ya se acabo algun archivo de lectura para salir de la mezcla de reales con reales
-				if (i == numeroMinimoTramos || j == numeroMinimoTramos) {
-				    condicionMezcla = false;
-				}
-			}
-		// Tramos ficticios 
-			int k = 0; 
-			if (archivoConElementosf1 == false) { // Significa que el otro probablemebte tenga archivos reales 
-				int tramosCopiados = d[indiceArchivoRol[0] - 1];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
-				anteriorDe2 = lectura2.readInt();
-				
-				while (archivoConElementosf2 == true && k < tramosCopiados) { // 2 opciones: llenamos con los tramos reales que hay que hacer o fin del archivo
-					
-           		 try {
-           			 actualDe2 = lectura2.readInt(); 
-           			 if (actualDe2 < anteriorDe2) { // detectamos cambio de tramo
-           				 k++; // COntador de cuantos tramos reales se copian (se mezclan con ficticios)
-           				d[indiceArchivoRol[0] - 1]--; // Reducimos los ficticios en ese archivo
-           				 escritura.writeInt(anteriorDe2);
-           			 } else 
-           				 escritura.writeInt(anteriorDe2); 
-           		 } catch (EOFException e) {
-           			 archivoConElementosf2 = false; 
-           			 escritura.writeInt(anteriorDe2); // Escribimos el ultimo elemento de archivo de lectura 2. 
-           			 }
-           		 
-           		 anteriorDe2 = actualDe2; 
-				}
-				
-				if (archivoConElementosf2 == false && k < tramosCopiados) { // Significa que se acabaron los tramos reales hay que ver si quedan ficticios por mezclar
-					while (k < tramosCopiados) {
-						d[indiceArchivoRol[0] - 1]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[1] - 1]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[2] - 1]++; //Esto es como mezclar ficticio con ficticio
-						k++; 
-					}
-				}
-			} else {
-				int tramosCopiados = d[indiceArchivoRol[1] - 1];  // Son tramos reales de un archivo mezclado con los ficticios de otro el d[indiceArchivoRol[0]]; se usa para acceder a los tramos ficticios de ese documento
-				anteriorDe1 = lectura1.readInt();
-				
-				while (archivoConElementosf2 == true && k < tramosCopiados) { // 2 opciones: llenamos con los tramos reales que hay que hacer o fin del archivo
-					
-           		 try {
-           			 actualDe1 = lectura1.readInt(); 
-           			 if (actualDe1 < anteriorDe1) { // detectamos cambio de tramo
-           				 k++; // Contador de cuantos tramos reales se copian (se mezclan con ficticios)
-           				 d[indiceArchivoRol[1] - 1]--; // Reducimos los ficticios en ese archivo
-           				 escritura.writeInt(anteriorDe1);
-           			 } else 
-           				 escritura.writeInt(anteriorDe1); 
-           		 } catch (EOFException e) {
-           			 archivoConElementosf1 = false; 
-           			 escritura.writeInt(anteriorDe1); // Escribimos el ultimo elemento de archivo de lectura 2. 
-           			 }
-           		 
-           		 anteriorDe1 = actualDe1; 
-				}
-				
-				if (archivoConElementosf1 == false && k < tramosCopiados) { // Significa que se acabaron los tramos reales hay que ver si quedan ficticios por mezclar
-					while (k < tramosCopiados) {
-						d[indiceArchivoRol[0] - 1]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[1] - 1]--; // Reducimos los ficticios en ese archivo
-						d[indiceArchivoRol[2] - 1]++; //Esto es como mezclar ficticio con ficticio
-						k++; 
-					}
-				}
-			}
-		// Logica calculo a del siguiente nivel:
-			// basicamente cogemos los numeros que estaban antes y restamos los tramos mezclados en los de lectura
-			a[indiceArchivoRol[0] - 1] = a[indiceArchivoRol[0] - 1] - numeroMinimoTramos - k; 
-			a[indiceArchivoRol[1] - 1] = a[indiceArchivoRol[1] - 1] - numeroMinimoTramos - k; 
-			// Sumamos en el de escritura
-			a[indiceArchivoRol[2] - 1] = numeroMinimoTramos + k; 
-		// Nivel --; 
-			
-		// Movemos dinamicamente los roles de los archivos ME FALTA CAMBIAR EL ARREGLO DE INDICE ARCHIVO ROL
-			String tempCambioString; 
-			if (archivoConElementosf1 == false && a[indiceArchivoRol[0] - 1] <= 0) { // Si el archivo esta vacio Y no tiene tramos entonces ese pasa a ser de escritura
-				tempCambioString = archivoEscritura; 
-				archivoEscritura = archivoLectura1; 
-				archivoLectura1 = tempCambioString; 
-				
-				int tempRol = indiceArchivoRol[2];
-			    indiceArchivoRol[2] = indiceArchivoRol[0];
-			    indiceArchivoRol[0] = tempRol;
-			} else {
-				tempCambioString = archivoEscritura; 
-				archivoEscritura = archivoLectura2; 
-				archivoLectura2 = tempCambioString;
-				
-				int tempRol = indiceArchivoRol[2];
-			    indiceArchivoRol[2] = indiceArchivoRol[1];
-			    indiceArchivoRol[1] = tempRol;
-			}
-			
-			
-			} catch (IOException e) {
-				
-			} finally {
-				// Cerramos archivos siempre 
-				lectura1.close();
-				lectura2.close();
-				escritura.close();
-			}
-			nivel--; 
-		}
-		System.out.println("Archivo final: " + archivoEscritura);
-}
+	    String archivoLectura1 = f1;
+	    String archivoLectura2 = f2;
+	    String archivoEscritura = f3;
+	    int[] roles = {1, 2, 3};
+	
+	    while (nivel >= 0) {
+	        DataInputStream in1 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura1)));
+	        DataInputStream in2 = new DataInputStream(new BufferedInputStream(new FileInputStream(archivoLectura2)));
+	        DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(archivoEscritura)));
+	
+	        int tramos1 = a[roles[0] - 1];
+	        int tramos2 = a[roles[1] - 1];
+	        int fict1 = d[roles[0] - 1];
+	        int fict2 = d[roles[1] - 1];
+	
+	        int reales1 = tramos1 - fict1;
+	        int reales2 = tramos2 - fict2;
+	        int tramosMezclar = Math.min(reales1, reales2);
+	
+	        try {
+	            for (int t = 0; t < tramosMezclar; t++) {
+	                boolean finTramo1 = false, finTramo2 = false;
+	                int actual1 = in1.readInt();
+	                int actual2 = in2.readInt();
+	
+	                while (!finTramo1 && !finTramo2) {
+	                    if (actual1 <= actual2) {
+	                        out.writeInt(actual1);
+	                        int anterior = actual1;
+	                        try {
+	                            actual1 = in1.readInt();
+	                            if (actual1 < anterior) finTramo1 = true;
+	                        } catch (EOFException e) {
+	                            finTramo1 = true;
+	                        }
+	                    } else {
+	                        out.writeInt(actual2);
+	                        int anterior = actual2;
+	                        try {
+	                            actual2 = in2.readInt();
+	                            if (actual2 < anterior) finTramo2 = true;
+	                        } catch (EOFException e) {
+	                            finTramo2 = true;
+	                        }
+	                    }
+	                }
+	
+	                while (!finTramo1) {
+	                    out.writeInt(actual1);
+	                    int anterior = actual1;
+	                    try {
+	                        actual1 = in1.readInt();
+	                        if (actual1 < anterior) finTramo1 = true;
+	                    } catch (EOFException e) {
+	                        finTramo1 = true;
+	                    }
+	                }
+	
+	                while (!finTramo2) {
+	                    out.writeInt(actual2);
+	                    int anterior = actual2;
+	                    try {
+	                        actual2 = in2.readInt();
+	                        if (actual2 < anterior) finTramo2 = true;
+	                    } catch (EOFException e) {
+	                        finTramo2 = true;
+	                    }
+	                }
+	            }
+	
+	            // Mezcla de tramos ficticios si quedan
+	            int k = 0;
+	            while (k < fict1) {
+	                copiarTramo(in1, out);
+	                d[roles[0] - 1]--;
+	                k++;
+	            }
+	            k = 0;
+	            while (k < fict2) {
+	                copiarTramo(in2, out);
+	                d[roles[1] - 1]--;
+	                k++;
+	            }
+	
+	        } finally {
+	            in1.close();
+	            in2.close();
+	            out.close();
+	        }
+	
+	        // Actualizar conteo de tramos
+	        a[roles[2] - 1] = tramosMezclar + (fict1 + fict2);
+	        a[roles[0] - 1] -= tramosMezclar + fict1;
+	        a[roles[1] - 1] -= tramosMezclar + fict2;
+	
+	        d[roles[2] - 1] = 0;
+	
+	        // Rotar archivos
+	        String temp = archivoLectura1;
+	        archivoLectura1 = archivoLectura2;
+	        archivoLectura2 = archivoEscritura;
+	        archivoEscritura = temp;
+	
+	        int tempRol = roles[0];
+	        roles[0] = roles[1];
+	        roles[1] = roles[2];
+	        roles[2] = tempRol;
+	
+	        nivel--;
+	    }
+	
+	    System.out.println("Archivo final: " + archivoEscritura);
+	}
+	
+	// Ayuda: copiar tramo entero (incluye detección de cambio de tramo)
+	private static void copiarTramo(DataInputStream in, DataOutputStream out) throws IOException {
+	    try {
+	        int actual = in.readInt();
+	        out.writeInt(actual);
+	        int anterior = actual;
+	        boolean finTramo = false;
+	
+	        while (!finTramo) {
+	            anterior = actual;
+	            try {
+	                actual = in.readInt();
+	                out.writeInt(actual);
+	                if (actual < anterior) finTramo = true;
+	            } catch (EOFException e) {
+	                finTramo = true;
+	            }
+	        }
+	    } catch (EOFException e) {
+	        // No-op
+	    }
+	}
 
 	
 	public static void llenarArchivoAleatoriamente() throws FileNotFoundException, IOException {
